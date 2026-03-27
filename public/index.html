@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MPPT Cloud Dashboard</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>MPPT Live Data</h1>
+  <p>Voltage: <span id="voltage">-</span> V</p>
+  <p>Current: <span id="current">-</span> A</p>
+
+  <h2>Last 10 readings</h2>
+  <ul id="history"></ul>
+
+  <script>
+    const voltageEl = document.getElementById("voltage");
+    const currentEl = document.getElementById("current");
+    const historyEl = document.getElementById("history");
+
+    const socket = io(); // auto-connect to same server
+
+    // Live updates
+    socket.on("mpptData", (data) => {
+      voltageEl.textContent = data.voltage;
+      currentEl.textContent = data.current;
+      addHistory(data);
+    });
+
+    // Initial last 10 readings
+    socket.on("history", (arr) => {
+      arr.forEach(addHistory);
+    });
+
+    function addHistory(data) {
+      const li = document.createElement("li");
+      li.textContent = `${new Date().toLocaleTimeString()} - V: ${data.voltage} | I: ${data.current}`;
+      historyEl.appendChild(li);
+      if (historyEl.children.length > 10) historyEl.removeChild(historyEl.firstChild);
+    }
+  </script>
+</body>
+</html>
