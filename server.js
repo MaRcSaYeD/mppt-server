@@ -27,13 +27,27 @@ const mpptSchema = new mongoose.Schema({
   current: Number,
   pvPower: Number,
   dutyCycle: Number,
+
+  batteryVoltage: Number,   
+  batteryCurrent: Number,   
+  chargingStage: String,    
+
   timestamp: { type: Date, default: Date.now }
 });
 
 const MpptData = mongoose.model("MpptData", mpptSchema, "data");
 
 app.post("/mppt", async (req, res) => {
-  const { voltage, current, pvPower, dutyCycle } = req.body;
+
+  const {
+    voltage,
+    current,
+    pvPower,
+    dutyCycle,
+    batteryVoltage,
+    batteryCurrent,
+    chargingStage
+  } = req.body;
 
   if (
     voltage == null ||
@@ -42,32 +56,38 @@ app.post("/mppt", async (req, res) => {
     dutyCycle == null
   ) {
     return res.status(400).json({
-      error: "Missing voltage, current, pvPower, or dutyCycle"
+      error: "Missing required data"
     });
   }
 
   try {
+
     const data = new MpptData({
       voltage,
       current,
       pvPower,
-      dutyCycle
+      dutyCycle,
+      batteryVoltage,
+      batteryCurrent,
+      chargingStage
     });
 
     await data.save();
 
-    io.emit("mpptData", {
-      voltage: data.voltage,
-      current: data.current,
-      pvPower: data.pvPower,
-      dutyCycle: data.dutyCycle,
-      timestamp: data.timestamp
+    io.emit("mpptData", data);
+
+    res.json({
+      success: true,
+      data
     });
 
-    res.json({ success: true, data });
   } catch (err) {
+
     console.error("POST /mppt error:", err);
-    res.status(500).json({ error: "Server error" });
+
+    res.status(500).json({
+      error: "Server error"
+    });
   }
 });
 
