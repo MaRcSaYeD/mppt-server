@@ -46,7 +46,7 @@ app.post("/mppt", async (req, res) => {
     dutyCycle,
     batteryVoltage,
     batteryCurrent,
-    chargingStage
+    ChargingStage,
   } = req.body;
 
   if (
@@ -69,7 +69,7 @@ app.post("/mppt", async (req, res) => {
       dutyCycle,
       batteryVoltage,
       batteryCurrent,
-      chargingStage
+      ChargingStage
     });
 
     await data.save();
@@ -93,8 +93,23 @@ app.post("/mppt", async (req, res) => {
 
 app.get("/history", async (req, res) => {
   try {
-    const history = await MpptData.find().sort({ timestamp: -1 }).limit(10);
-    res.json(history.reverse());
+    const history = await MpptData.find()
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .lean();
+
+    res.json(
+      history.reverse().map((item) => ({
+        voltage: item.voltage,
+        current: item.current,
+        pvPower: item.pvPower,
+        dutyCycle: item.dutyCycle,
+        batteryVoltage: item.batteryVoltage,
+        batteryCurrent: item.batteryCurrent,
+        chargingStage: item.chargingStage,
+        timestamp: item.timestamp
+      }))
+    );
   } catch (err) {
     console.error("GET /history error:", err);
     res.status(500).json({ error: "Server error" });
@@ -105,8 +120,24 @@ io.on("connection", async (socket) => {
   console.log("🔌 Dashboard connected:", socket.id);
 
   try {
-    const lastData = await MpptData.find().sort({ timestamp: -1 }).limit(10);
-    socket.emit("history", lastData.reverse());
+    const lastData = await MpptData.find()
+      .sort({ timestamp: -1 })
+      .limit(10)
+      .lean();
+
+    socket.emit(
+      "history",
+      lastData.reverse().map((item) => ({
+        voltage: item.voltage,
+        current: item.current,
+        pvPower: item.pvPower,
+        dutyCycle: item.dutyCycle,
+        batteryVoltage: item.batteryVoltage,
+        batteryCurrent: item.batteryCurrent,
+        chargingStage: item.chargingStage,
+        timestamp: item.timestamp
+      }))
+    );
   } catch (err) {
     console.error("Socket history error:", err);
   }
