@@ -38,6 +38,8 @@ const mpptSchema = new mongoose.Schema({
 const MpptData = mongoose.model("MpptData", mpptSchema, "data");
 
 app.post("/mppt", async (req, res) => {
+  console.log("Received from Arduino:", req.body);
+
 
   const {
     voltage,
@@ -46,7 +48,7 @@ app.post("/mppt", async (req, res) => {
     dutyCycle,
     batteryVoltage,
     batteryCurrent,
-    ChargingStage,
+    chargingStage,
   } = req.body;
 
   if (
@@ -69,7 +71,7 @@ app.post("/mppt", async (req, res) => {
       dutyCycle,
       batteryVoltage,
       batteryCurrent,
-      ChargingStage
+      chargingStage,
     });
 
     await data.save();
