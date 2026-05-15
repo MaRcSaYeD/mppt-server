@@ -28,9 +28,9 @@ const mpptSchema = new mongoose.Schema({
   pvPower: Number,
   dutyCycle: Number,
 
-  batteryVoltage: Number,   
-  batteryCurrent: Number,   
-  chargingStage: String,    
+  batteryVoltage: Number,
+  batteryCurrent: Number,
+  chargingStage: String,
 
   timestamp: { type: Date, default: Date.now }
 });
@@ -39,7 +39,6 @@ const MpptData = mongoose.model("MpptData", mpptSchema, "data");
 
 app.post("/mppt", async (req, res) => {
   console.log("Received from Arduino:", req.body);
-
 
   const {
     voltage,
@@ -63,7 +62,6 @@ app.post("/mppt", async (req, res) => {
   }
 
   try {
-
     const data = new MpptData({
       voltage,
       current,
@@ -84,7 +82,6 @@ app.post("/mppt", async (req, res) => {
     });
 
   } catch (err) {
-
     console.error("POST /mppt error:", err);
 
     res.status(500).json({
@@ -93,15 +90,15 @@ app.post("/mppt", async (req, res) => {
   }
 });
 
+// ✅ API history route: returns ALL stored data
 app.get("/history", async (req, res) => {
   try {
     const history = await MpptData.find()
-      .sort({ timestamp: -1 })
-      .limit(10)
+      .sort({ timestamp: 1 })
       .lean();
 
     res.json(
-      history.reverse().map((item) => ({
+      history.map((item) => ({
         voltage: item.voltage,
         current: item.current,
         pvPower: item.pvPower,
@@ -122,14 +119,14 @@ io.on("connection", async (socket) => {
   console.log("🔌 Dashboard connected:", socket.id);
 
   try {
-    const lastData = await MpptData.find()
-      .sort({ timestamp: -1 })
-      .limit(10)
+    // ✅ Socket history: also sends ALL stored data
+    const allData = await MpptData.find()
+      .sort({ timestamp: 1 })
       .lean();
 
     socket.emit(
       "history",
-      lastData.reverse().map((item) => ({
+      allData.map((item) => ({
         voltage: item.voltage,
         current: item.current,
         pvPower: item.pvPower,
